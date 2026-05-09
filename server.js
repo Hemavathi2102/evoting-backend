@@ -7,7 +7,7 @@ const { Server } = require("socket.io");
 const os = require("os");
 const nodemailer = require("nodemailer");
 const env = require("dotenv").config();
-
+const PORT = process.env.PORT || 5000;
 
 
 const app = express();
@@ -295,10 +295,10 @@ app.post("/vote", async (req, res) => {
     await voter.save();
 
     const LOCAL_IP = getLocalIP();
-    const qrData = `http://${LOCAL_IP}:5000/mobile/${voter.voterId}`;
+    const qrData = `https://evoting-backend-62hq.onrender.com/mobile/${voter.voterId}`;
     const qrImage = await QRCode.toDataURL(qrData);
 
-    const safeVote = voter.toObject();
+    const safeVote = voter.toObject(); 
 
     res.json({
       message: "QR generated successfully",
@@ -429,7 +429,7 @@ res.send(`
   const voterId = "${voter.voterId}"; // inject server-side variable safely
 
   function confirmVote() {
-    fetch("http://" + window.location.hostname + ":5000/confirm/" + voterId, {
+    fetch("https://evoting-backend-62hq.onrender.com/confirm/" + voterId {
       method: "PUT"
     })
     .then(res => res.json())
@@ -546,6 +546,6 @@ app.post("/end-election", async (req, res) => {
 });
 
 // ✅ Start Server
-server.listen(5000, () => {
-  console.log("Server running on port 5000");
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
