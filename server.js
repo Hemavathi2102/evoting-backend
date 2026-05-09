@@ -21,7 +21,7 @@ const server = http.createServer(app);
 // ✅ Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: ["http://localhost:5173", "https://your-frontend.onrender.com"],
     methods: ["GET", "POST", "PUT"]
   }
 });
