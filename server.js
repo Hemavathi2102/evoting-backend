@@ -14,6 +14,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("E-Voting Backend Running Successfully 🚀");
+});
+
 // ✅ Create HTTP server
 const server = http.createServer(app);
 
@@ -429,7 +433,7 @@ res.send(`
   const voterId = "${voter.voterId}"; // inject server-side variable safely
 
   function confirmVote() {
-    fetch("https://evoting-backend-62hq.onrender.com/confirm/" + voterId {
+    fetch("https://evoting-backend-62hq.onrender.com/confirm/" + voterId, {
       method: "PUT"
     })
     .then(res => res.json())
