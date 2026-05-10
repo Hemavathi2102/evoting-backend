@@ -555,9 +555,14 @@ app.post("/end-election", async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+  console.log("REGISTER ERROR:", err);
+
+  res.status(500).json({
+    message: err.message,
+    fullError: err
+  });
+}
+  });
 
 // ✅ Start Server
 server.listen(PORT, () => {
