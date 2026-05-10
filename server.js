@@ -155,19 +155,16 @@ app.post("/register", async (req, res) => {
 
     await voter.save();
 
-    // ✅ EMAIL inside try block
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "OTP",
-        text: `OTP: ${otp}`
-      });
-    } catch (err) {
-      console.log("Mail failed:", err.message);
-    }
+// send response FIRST
+    res.json({ message: "Registration successful" });
 
-    return res.json({ message: "Registration successful" });
+// send email AFTER response
+    transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "OTP",
+    text: `OTP: ${otp}`
+    }).catch(err => console.log("Mail failed:", err.message));
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);
