@@ -6,7 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const os = require("os");
 const nodemailer = require("nodemailer");
-const env = require("dotenv").config();
+require("dotenv").config();
 const PORT = process.env.PORT || 5000;
 
 
@@ -72,19 +72,6 @@ mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("DB Connected"))
 .catch(err => console.log(err));
 
-// ✅ EMAIL SETUP
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  }
-});
-
-let electionEnded = false; 
-
-
-
 // ✅ Vote Schema
 const voteSchema = new mongoose.Schema({
   voterId: { type: String, required: true, unique: true },
@@ -105,80 +92,71 @@ const voteSchema = new mongoose.Schema({
 
 const Vote = mongoose.model("Vote", voteSchema);
 
+// ✅ EMAIL SETUP
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  }
+});
+
+let electionEnded = false; 
+
+
 app.post("/register", async (req, res) => {
   console.log("REGISTER HIT");
-  console.log(req.body);
 
   try {
-
-    console.log("BODY DATA:", req.body); // ✅ DEBUG FIRST
-
-    // ✅ SAFE extraction (prevents crash)
     const { name, phone, email, registerNumber, voterId, aadhaar } = req.body || {};
 
-    // ✅ Check if body exists
     if (!req.body) {
       return res.status(400).json({ message: "Body not received" });
     }
 
-    // ✅ Validate input
     if (!name || !phone || !email || !registerNumber || !voterId || !aadhaar) {
       return res.status(400).json({ message: "All fields required" });
     }
 
-let errors = [];
+    let errors = [];
 
-// Check phone
-const phoneExists = await Vote.findOne({ phone });
-if (phoneExists) {
-  errors.push("Phone number already exists");
-}
+    const phoneExists = await Vote.findOne({ phone });
+    if (phoneExists) errors.push("Phone number already exists");
 
-// Check register number
-const registerExists = await Vote.findOne({ registerNumber });
-if (registerExists) {
-  errors.push("Register number already exists");
-}
+    const registerExists = await Vote.findOne({ registerNumber });
+    if (registerExists) errors.push("Register number already exists");
 
-// Check voter ID
-const voterExists = await Vote.findOne({ voterId });
-if (voterExists) {
-  errors.push("Voter ID already exists");
-}
+    const voterExists = await Vote.findOne({ voterId });
+    if (voterExists) errors.push("Voter ID already exists");
 
-// Check Aadhaar
-const aadhaarExists = await Vote.findOne({ aadhaar });
-if (aadhaarExists) {
-  errors.push("Aadhaar already exists");
-}
+    const aadhaarExists = await Vote.findOne({ aadhaar });
+    if (aadhaarExists) errors.push("Aadhaar already exists");
 
-// If duplicates found
-if (errors.length > 0) {
-  return res.status(400).json({
-    message: errors.join(", ")
-  });
-}
+    if (errors.length > 0) {
+      return res.status(400).json({
+        message: errors.join(", ")
+      });
+    }
 
-    // 3️⃣ Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 4️⃣ Save voter
     const voter = new Vote({
       name,
       phone,
       email,
       registerNumber,
       voterId,
-      aadhaar,              // ✅ matches schema
-      otp,                  // ✅ OTP stored
-      verifiedPhone: true,  // ✅ Boolean
+      aadhaar,
+      otp,
+      verifiedPhone: true,
       verified: false,
       voted: false
     });
 
     await voter.save();
 
-try {
+    // ✅ EMAIL inside try block
+    try {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
@@ -189,11 +167,20 @@ try {
       console.log("Mail failed:", err.message);
     }
 
-    res.json({ message: "Registration successful" });
+    return res.json({ message: "Registration successful" });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("REGISTER ERROR:", err);
+
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "Duplicate entry detected"
+      });
+    }
+
+    return res.status(500).json({
+      message: err.message
+    });
   }
 });
 
