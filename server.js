@@ -106,6 +106,9 @@ const voteSchema = new mongoose.Schema({
 const Vote = mongoose.model("Vote", voteSchema);
 
 app.post("/register", async (req, res) => {
+  console.log("REGISTER HIT");
+  console.log(req.body);
+
   try {
 
     console.log("BODY DATA:", req.body); // ✅ DEBUG FIRST
@@ -119,7 +122,7 @@ app.post("/register", async (req, res) => {
     }
 
     // ✅ Validate input
-    if (!name || !phone || !registerNumber || !voterId || !aadhaar) {
+    if (!name || !phone || !email || !registerNumber || !voterId || !aadhaar) {
       return res.status(400).json({ message: "All fields required" });
     }
 
