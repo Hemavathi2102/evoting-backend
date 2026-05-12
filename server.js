@@ -8,6 +8,7 @@ const os = require("os");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 const PORT = process.env.PORT || 5000;
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
 
 const app = express();
@@ -92,17 +93,6 @@ const voteSchema = new mongoose.Schema({
 
 const Vote = mongoose.model("Vote", voteSchema);
 
-// ✅ EMAIL SETUP
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 let electionEnded = false; 
 
 
@@ -160,19 +150,35 @@ app.post("/register", async (req, res) => {
 // send response FIRST
     res.json({ message: "Registration successful" });
 
-// send email AFTER response
-    transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: email,
-  subject: "OTP",
-  text: `OTP: ${otp}`
-})
-.then(info => {
-  console.log("📧 Email sent:", info.response);
-})
-.catch(err => {
-  console.log("❌ Email error:", err);
-});
+// ✅ BREVO EMAIL API
+let defaultClient = SibApiV3Sdk.ApiClient.instance;
+
+let apiKey = defaultClient.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+let sendSmtpEmail = {
+  sender: {
+    email: "sparkcreations26@gmail.com",
+    name: "E-Voting System"
+  },
+  to: [
+    {
+      email: email
+    }
+  ],
+  subject: "Your OTP Verification",
+  textContent: `Your Registration has been Registered Successfully.Your OTP TO Login is: ${otp}`
+};
+
+apiInstance.sendTransacEmail(sendSmtpEmail)
+  .then(function(data) {
+    console.log("📧 Email sent successfully");
+  })
+  .catch(function(error) {
+    console.log("❌ Brevo Email Error:", error);
+  });
   } catch (err) {
     console.error("REGISTER ERROR:", err);
 
